@@ -10,6 +10,8 @@ import xml.etree.ElementTree as ET
 # ============================================================================
 # Folder where the mods are installed to be used by the game.
 SAVE_DIR = r'~\Documents\My Games\FarmingSimulator2017\mods'
+# Location where the game is installed.
+GAME_DIR = r'D:\steam\steamapps\common\Farming Simulator 17'
 # Folder where the FS17 mods are stored as backup.
 MOD_VAULT = '../Mods'
 # Name of the HTML file to create.  A leading underscore ensures it is listed first in Explorer.
@@ -101,6 +103,9 @@ def main():
             xml = xml.replace('partOfEconomy="true"', 'partOfEconomy="true" ')
             xml = xml.replace('"configFilename=', '" configFilename=')
             xml = xml.replace('"baleTypesDirectory=', '" baleTypesDirectory=')
+            # Some more invalid tokens in Beta mods.
+            xml = xml.replace('Bressel&Lade', 'Bressel+Lade')
+            xml = xml.replace('and enjoy.]]></de>', 'and enjoy.</de>')
             # ------------------------------------------------------------------------
             # Create an ET Element from the XML.
             modDesc = ET.fromstring(xml, parser=ET.XMLParser(encoding="utf-8"))
@@ -132,7 +137,8 @@ def main():
             multiplayer = False
             MP = modDesc.find('./multiplayer')
             if MP is not None:
-                multiplayer = MP.attrib['supported'] == 'true'
+                if 'supported' in MP.attrib:
+                    multiplayer = MP.attrib['supported'] == 'true'
             # ------------------------------------------------------------------------
             # A new DIV, to contain the Mod description.
             attr = {}
@@ -217,24 +223,33 @@ def get_mod_title(modDesc) -> str:
 # Find the icon
 def find_icon(zipfile:str, zip:ZipFile, modDesc) -> str:
     # ------------------------------------------------------------------------
+    # Get the icon file
     icon_file = modDesc.find('./iconFilename')
+    # Check, if there is a sub-tag "<en>".
     icon_file_en = icon_file.find('./en')
     if icon_file_en is not None:
         icon_file = icon_file_en
+    # Get the text of the tag.
     icon_file = icon_file.text
+    # Store original name of the icon file, for reporting.
+    icon_file_org = icon_file
     # ------------------------------------------------------------------------
     icon_b64 = None
     # ------------------------------------------------------------------------
     while True:
         try:
-            zip.getinfo(icon_file)
             icon_b64 = get_icon(zip, icon_file)
         except KeyError:
-            # At least one mod has the wrong Icon file name, fix it and try again.
+            # At least one mod has the wrong Icon file name (.png instead of .dds), fix it and try again.
             if icon_file.endswith('.png'):
                 icon_file = icon_file.replace('.png', '.dds')
                 continue
-            print('Unkown Icon file:', icon_file, " in ", zipfile)
+            # Is the file referring to the Game's store?
+            data_store = os.path.join(GAME_DIR, 'data', 'store')
+            icon_file = icon_file.replace('$data/store/', data_store+'/')
+            if os.path.exists(icon_file):
+                continue
+            print('Unkown Icon file:', icon_file_org, " in ", zipfile)
             sys.exit(-1)
         break
     # ------------------------------------------------------------------------
@@ -243,7 +258,16 @@ def find_icon(zipfile:str, zip:ZipFile, modDesc) -> str:
 
 # ============================================================================
 def get_icon(zip, icon_name) -> str:
-    in_bytes = zip.read(icon_name)
+    try:
+        in_bytes = zip.read(icon_name)
+    except:
+        # Check if the file exists outside the ZIP file.
+        # print('Trying to find icon on local storage:', icon_name)
+        if os.path.exists(icon_name):
+            with open(icon_name, 'rb') as f_in:
+                in_bytes = f_in.read()
+        else:
+            raise KeyError
     with BytesIO(in_bytes) as in_stream:
         image = Image.open(in_stream)
         image = image.resize((IMG_SIZE,IMG_SIZE))
