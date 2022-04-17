@@ -29,12 +29,6 @@ class Tag(object):
         return tag
 
     # ========================================================================
-    # Create the default meta tag. Should be used on the <head> tag.
-    def default_meta(self):
-        self.tag('meta', {'http-equiv': "Content-Type",
-                 'content': "text/html; charset=ISO-8859-1"})
-
-    # ========================================================================
     # Convert the Tag to an HTML string.
     def to_str(self, indent='') -> str:
         # ------------------------------------------------------------------------
@@ -87,18 +81,19 @@ class Tag(object):
 # HTML class to represent a full HTML document.
 class Html(Tag):
     # ========================================================================
-    def __init__(self, create_head_and_body=True) -> None:
+    def __init__(self, create_head_and_body=True, charset='utf-8') -> None:
         # ------------------------------------------------------------------------
-        super().__init__('html', {'xmlns': 'http://www.w3.org/1999/xhtml'})
+        super().__init__('html', {'lang': 'en'})
         # ------------------------------------------------------------------------
-        # Set preamble variable now. The user can overwrite it afterwards, if they want to.
-        s = '<?xml version="1.0" encoding="ISO-8859-1" ?>' + LINEBR
-        s += '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">' + LINEBR
-        self.preamble = s
+        self.charset = charset
+        # ------------------------------------------------------------------------
+        # Set preamble variable now. 
+        # The user can overwrite it afterwards, if they want to.
+        self.preamble = '<!doctype html>' + LINEBR
         # ------------------------------------------------------------------------
         if create_head_and_body:
             self.head = super().tag('head')
-            self.head.default_meta()
+            self.head.tag('meta', { 'charset':self.charset})
             self.body = super().tag('body')
         # ------------------------------------------------------------------------
 
@@ -108,7 +103,7 @@ class Html(Tag):
 
     # ========================================================================
     def save(self, filename):
-        with open(filename, 'wt', encoding="utf-8", errors="surrogateescape") as f_out:
+        with open(filename, 'wt', encoding=self.charset, errors="surrogateescape") as f_out:
             f_out.write(self.to_str())
 
 
