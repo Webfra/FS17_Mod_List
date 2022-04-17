@@ -1,0 +1,29 @@
+
+/* Dark theme as default. */
+body {
+    background-color: #1f1f1f;
+    color: white;
+}
+
+/* Tables shall be top-aligned */
+table td,
+table td * {
+    vertical-align: top;
+}
+
+/* div-style for installed mods. */
+.instDiv {
+    background: #7fc032;
+    color: white;
+}
+
+/* Highlighted text shall be shown as 'FS17 green' */
+.fsgreen {
+    color: #7fc032;
+}
+
+/* Highlight description for better readability. */
+.desc {
+    background: #3f3f3f;
+    color: white;
+}

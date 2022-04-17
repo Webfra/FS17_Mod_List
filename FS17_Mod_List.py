@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 import os
-from types import SimpleNamespace
 from zipfile import ZipFile
 from io import BytesIO
 import base64
@@ -25,29 +26,9 @@ HTML_TITLE = 'FS17 - Mod List'
 
 # ============================================================================
 # Constants for HTML generation.
-FS_GREEN = '#7fc032'
 # Size (width and height) of the icons in the HTML.
 # All icons will be scaled (up or down) to this size.
 IMG_SIZE = 128
-CSS = '''
-    body {
-        background-color:#1f1f1f;
-        color:white;
-    }
-    table td, table td * {
-        vertical-align: top;
-    }
-    .instDiv {
-        background:'''+FS_GREEN+''';
-    }
-    .fsgreen {
-        color:'''+FS_GREEN+''';
-    }
-    .desc {
-        background:#3f3f3f;
-        color:white;
-    }
-'''
 
 
 # ============================================================================
@@ -76,7 +57,7 @@ def main():
     # Read MOD information and prepare HTML content.
     num_mods = len(list_of_zipfiles)
     print(f'Reading information for {num_mods} mods...')
-    for idx, zipfile in enumerate(list_of_zipfiles):
+    for _, zipfile in enumerate(list_of_zipfiles):
         # ------------------------------------------------------------------------
         # Show progress.
         # print(idx+1, 'of', len(list_of_zipfiles), zipfile)
@@ -108,7 +89,8 @@ def create_html_doc(mods: dict) -> Html:
     # ------------------------------------------------------------------------
     # Create a <head> tag.
     html.head.tag('title', text=HTML_TITLE)
-    html.head.tag('style', {'type': 'text/css'}, text=CSS)
+    with open('styles.css', 'rt') as css:
+        html.head.tag('style', {'type': 'text/css'}, text=css.read())
     # ------------------------------------------------------------------------
     # Create a <body> tag.
     body = html.body
@@ -132,7 +114,7 @@ def create_html_doc(mods: dict) -> Html:
 
 # ============================================================================
 # Create a HTML representation for the mod.
-def create_mod_html(mod: SimpleNamespace) -> Tag:
+def create_mod_html(mod: Mod) -> Tag:
     # ------------------------------------------------------------------------
     # A new DIV, to contain the Mod description.
     div = Tag('div', {'class': 'instDiv'} if mod.is_installed else {})
@@ -154,12 +136,8 @@ def create_mod_html(mod: SimpleNamespace) -> Tag:
             'width': str(IMG_SIZE), 'height': str(IMG_SIZE)})
     # ------------------------------------------------------------------------
     # Column 2: Name and information.
-    if not mod.is_installed:
-        attr = {'class': 'fsgreen'}
-    else:
-        attr = {}
-    # f'(#{idx+1}) {title}')
-    td2.tag('div', attr).tag('b', text=f'{mod.title}')
+    td2.tag('div', {'class': 'fsgreen'} if mod.is_installed else {}).tag(
+        'b', text=f'{mod.title}')
     td2.tag('i').tag('small').tag('a', {'href': mod.zipfile}, text=mod.zipfile)
     td2.tag('div', text='Version: ' + mod.version)
     td2.tag('div').tag('small', text='Author: ' + mod.author)
@@ -173,9 +151,9 @@ def create_mod_html(mod: SimpleNamespace) -> Tag:
 
 
 # ============================================================================
-def get_mod_info(zipfile: str, installed_mods: list) -> SimpleNamespace:
+def get_mod_info(zipfile: str, installed_mods: list) -> Mod:
     # ------------------------------------------------------------------------
-    mod = SimpleNamespace()
+    mod = Mod()
     # ------------------------------------------------------------------------
     mod.zipfile = zipfile
     # ------------------------------------------------------------------------
@@ -331,6 +309,33 @@ def get_icon(zip, icon_name) -> str:
             out_base64 = base64.b64encode(out_stream.getvalue()).decode()
     # ------------------------------------------------------------------------
     return out_base64
+
+
+# ============================================================================
+class Mod(object):
+    def __init__(self) -> None:
+        self.zipfile = ''
+        '''The name of the ZIP file of the Mod.'''
+        self.is_installed = False
+        '''True, if the Mod is installed in the game.'''
+        self.zipfile_vault = ''
+        '''The name of the ZIP file of the Mod, including the path to the vault folder.'''
+        self.modDesc = ET.Element('')
+        '''The modDesc.xml as xml.etree.ElementTree Element'''
+        self.has_maps = False
+        '''True, if the Mod contains a map.'''
+        self.title = ''
+        '''The title of the Mod'''
+        self.icon_b64 = ''
+        '''Base64 representation of the Mod icon.'''
+        self.author = ''
+        '''Author of the Mod.'''
+        self.version = ''
+        '''Version of the Mod.'''
+        self.description = ''
+        '''Mod description, can be lenghty...'''
+        self.multiplayer = False
+        '''True, if the Mod claims to support multiplayer.'''
 
 
 # ============================================================================
