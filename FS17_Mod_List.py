@@ -71,6 +71,9 @@ def main():
     body = html.tag('body')
     body.tag('h1', {'class':'fsgreen'}, text='Farming Simulator 17 - Mod List')
 
+    map_mods = []
+    other_mods = []
+
     # ------------------------------------------------------------------------
     # Read MOD information and prepare HTML content.
     num_mods = len(list_of_zipfiles)
@@ -103,8 +106,8 @@ def main():
             modDesc = ET.fromstring(xml, parser=ET.XMLParser(encoding="utf-8"))
             # ------------------------------------------------------------------------
             # Is the mod a Map?
-            has_maps = modDesc.find('./maps')
-            if has_maps is not None:
+            has_maps = modDesc.find('./maps') is not None
+            if has_maps:
                 # Maybe in the future, we will treat maps separately...
                 pass
             # ------------------------------------------------------------------------
@@ -131,15 +134,12 @@ def main():
             if MP is not None:
                 multiplayer = MP.attrib['supported'] == 'true'
             # ------------------------------------------------------------------------
-            # Create the HTML representation for the Mod.
-            body.tag('hr')
-            # ------------------------------------------------------------------------
             # A new DIV, to contain the Mod description.
             attr = {}
             if is_installed:
                 # Mark installed Mods as such.
                 attr['class'] = 'instDiv'
-            div = body.tag('div', attr)
+            div = Tag('div', attr)
             # ------------------------------------------------------------------------
             # Create a table (with a single row) for the Mod description.
             # 1st column: The Icon
@@ -162,7 +162,7 @@ def main():
                 attr = {'class':'fsgreen'}
             else:
                 attr = {}
-            td2.tag('div', attr ).tag('b', text=f'(#{idx+1}) {title}')
+            td2.tag('div', attr ).tag('b', text=f'{title}')  # f'(#{idx+1}) {title}')
             td2.tag('i').tag('small').tag('a', {'href':zipfile}, text=zipfile)
             td2.tag('div', text='Version: ' + version)
             td2.tag('div').tag('small', text='Author: ' + author)
@@ -172,9 +172,27 @@ def main():
             # Column 3: Detailed Mod description
             td3.tag('small', text=description)
             # ------------------------------------------------------------------------
+            if has_maps:
+                map_mods.append(div)
+            else:
+                other_mods.append(div)
+            # ------------------------------------------------------------------------
+    # ------------------------------------------------------------------------
+    body.tag('h1', text='Category: Other Mods')
+    for div in other_mods:
+        body.tag('hr')
+        body.add(div)
+    # ------------------------------------------------------------------------
+    body.tag('hr')
+    body.tag('h1', text='Category: Maps')
+    for div in map_mods:
+        body.tag('hr')
+        body.add(div)
+    # ------------------------------------------------------------------------
     out_file = os.path.abspath(os.path.join(MOD_VAULT, OUTPUT_FILE))
     print(f'Writing HTML file: {out_file} ...')
     doc.save(out_file)
+    # ------------------------------------------------------------------------
 
 
 # ============================================================================
