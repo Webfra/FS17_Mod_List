@@ -70,7 +70,7 @@ def main():
         sys.exit(-1)
 
     # ------------------------------------------------------------------------
-    mods = { 'maps':[], 'other':[] }
+    mods = {'maps': [], 'other': []}
 
     # ------------------------------------------------------------------------
     # Read MOD information and prepare HTML content.
@@ -87,7 +87,7 @@ def main():
         # Create a HTML representation for the mod.
         div = create_mod_html(mod_info)
         # ------------------------------------------------------------------------
-        mods[ 'maps' if mod_info.has_maps else 'other' ].append(div)
+        mods['maps' if mod_info.has_maps else 'other'].append(div)
 
     # ------------------------------------------------------------------------
     doc = create_html_doc(mods)
@@ -100,19 +100,21 @@ def main():
 
 
 # ============================================================================
-def create_html_doc(mods) -> Html:
+# Create a HTML document from the mods dictionary.
+def create_html_doc(mods: dict) -> Html:
     # ------------------------------------------------------------------------
-    # Start a new HTML file. (Fixed boilerplate code.)
-    doc = Html()
-    html = doc.tag('html', {'xmlns': 'http://www.w3.org/1999/xhtml'})
+    # Start a new HTML file.
+    html = Html()
+    # ------------------------------------------------------------------------
+    # Create a <head> tag.
     head = html.tag('head')
-    head.tag('meta', {'http-equiv': "Content-Type",
-             'content': "text/html; charset=ISO-8859-1"})
+    head.default_meta()
     head.tag('title', text='FS17 Mod List')
     head.tag('style', {'type': 'text/css'}, text=CSS)
+    # ------------------------------------------------------------------------
+    # Create a <body> tag.
     body = html.tag('body')
-    body.tag('h1', {'class': 'fsgreen'},
-             text=HTML_TITLE)
+    body.tag('h1', {'class': 'fsgreen'}, text=HTML_TITLE)
     # ------------------------------------------------------------------------
     # Add all "other" mods.
     body.tag('h1', text='Category: Other Mods')
@@ -127,14 +129,15 @@ def create_html_doc(mods) -> Html:
         body.tag('hr')
         body.add(div)
     # ------------------------------------------------------------------------
-    return doc
+    return html
 
 
 # ============================================================================
-def create_mod_html(mod:SimpleNamespace) -> Tag:
+# Create a HTML representation for the mod.
+def create_mod_html(mod: SimpleNamespace) -> Tag:
     # ------------------------------------------------------------------------
     # A new DIV, to contain the Mod description.
-    div = Tag('div', { 'class':'instDiv' } if mod.is_installed else {} )
+    div = Tag('div', {'class': 'instDiv'} if mod.is_installed else {})
     # ------------------------------------------------------------------------
     # Create a table (with a single row) for the Mod description.
     # 1st column: The Icon
@@ -172,7 +175,7 @@ def create_mod_html(mod:SimpleNamespace) -> Tag:
 
 
 # ============================================================================
-def get_mod_info(zipfile:str, installed_mods:list) -> SimpleNamespace:
+def get_mod_info(zipfile: str, installed_mods: list) -> SimpleNamespace:
     # ------------------------------------------------------------------------
     mod = SimpleNamespace()
     # ------------------------------------------------------------------------
@@ -222,6 +225,7 @@ def get_mod_info(zipfile:str, installed_mods:list) -> SimpleNamespace:
                 mod.multiplayer = MP.attrib['supported'] == 'true'
     return mod
 
+
 # ============================================================================
 # Fix a few issues with the modDesc.xml of some mods.
 # Otherwise, ET.fromstring() will fail!
@@ -240,7 +244,6 @@ def fix_xml(xml: str) -> str:
     xml = xml.replace('and enjoy.]]></de>', 'and enjoy.</de>')
     # ------------------------------------------------------------------------
     return xml
-
 
 
 # ============================================================================
@@ -334,7 +337,7 @@ def get_icon(zip, icon_name) -> str:
 
 # ============================================================================
 # Get a list of zip files in the given folder.
-def get_zipfiles(folder:str) -> list:
+def get_zipfiles(folder: str) -> list:
     # ------------------------------------------------------------------------
     # Convert "~" into the users home folder.
     folder = os.path.expanduser(folder)

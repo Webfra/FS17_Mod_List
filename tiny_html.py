@@ -1,3 +1,4 @@
+from __future__ import annotations
 
 # ============================================================================
 INDENT = ' '    # Intentation to be used.
@@ -15,16 +16,26 @@ class Tag(object):
         self.children = []
 
     # ========================================================================
-    def add(self, tag: object) -> None:
+    # Add the given tag to the list of sub-tags.
+    def add(self, tag: Tag) -> None:
         self.children.append(tag)
 
     # ========================================================================
+    # Create a new sub-tag using the given parameters, add it to the
+    # current tag and return it to the caller.
     def tag(self, name: str, attributes: dict = {}, text: str = None) -> object:
         tag = Tag(name, attributes, text)
         self.add(tag)
         return tag
 
     # ========================================================================
+    # Create the default meta tag. Should be used on the <head> tag.
+    def default_meta(self):
+        self.tag('meta', {'http-equiv': "Content-Type",
+                 'content': "text/html; charset=ISO-8859-1"})
+
+    # ========================================================================
+    # Convert the Tag to an HTML string.
     def to_str(self, indent='') -> str:
         # ------------------------------------------------------------------------
         s = indent + "<" + self.name
@@ -77,14 +88,13 @@ class Tag(object):
 class Html(Tag):
     # ========================================================================
     def __init__(self) -> None:
-        super().__init__('html_doc')
+        super().__init__('html', {'xmlns': 'http://www.w3.org/1999/xhtml'})
 
     # ========================================================================
     def to_str(self) -> str:
         s = '<?xml version="1.0" encoding="ISO-8859-1" ?>' + LINEBR
         s += '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">' + LINEBR
-        for child in self.children:
-            s += child.to_str()
+        s += super().to_str()
         return s
 
     # ========================================================================
