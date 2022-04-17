@@ -9,7 +9,7 @@ import xml.etree.ElementTree as ET
 
 # ============================================================================
 # Folder where the mods are installed to be used by the game.
-INSTALL_DIR = '~/Documents/My Games/FarmingSimulator2017/mods'
+SAVE_DIR = r'~\Documents\My Games\FarmingSimulator2017\mods'
 # Folder where the FS17 mods are stored as backup.
 MOD_VAULT = '../Mods'
 # Name of the HTML file to create.  A leading underscore ensures it is listed first in Explorer.
@@ -48,10 +48,10 @@ CSS='''
 def main():
     # ------------------------------------------------------------------------
     # Get the list of installed Mods. (ZIP files only)
-    inst_dir = os.path.expanduser(INSTALL_DIR)
+    save_dir = os.path.expanduser(SAVE_DIR)
     installed_mods = []
-    if os.path.exists(inst_dir):
-        installed_mods = get_zipfiles(inst_dir)
+    if os.path.exists(save_dir):
+        installed_mods = get_zipfiles(save_dir)
 
     # ------------------------------------------------------------------------
     # Get the list of Mods in the current folder.
