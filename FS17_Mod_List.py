@@ -56,6 +56,9 @@ def main():
     # ------------------------------------------------------------------------
     # Get the list of Mods in the current folder.
     list_of_zipfiles = get_zipfiles(MOD_VAULT)
+    if len(list_of_zipfiles) <= 0:
+        print('***ERROR: No Mods (ZIP files) found in:', os.path.abspath(MOD_VAULT))
+        sys.exit(-1)
 
     # ------------------------------------------------------------------------
     # Start a new HTML file. (Fixed boilerplate code.)
