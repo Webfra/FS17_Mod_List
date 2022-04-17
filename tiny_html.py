@@ -30,7 +30,7 @@ class Tag(object):
 
     # ========================================================================
     # Convert the Tag to an HTML string.
-    def to_str(self, indent='') -> str:
+    def html(self, indent='') -> str:
         # ------------------------------------------------------------------------
         s = indent + "<" + self.name
         # ------------------------------------------------------------------------
@@ -62,7 +62,7 @@ class Tag(object):
             # ------------------------------------------------------------------------
             if has_children:
                 for child in self.children:
-                    s += child.to_str(indent + INDENT)
+                    s += child.html(indent + INDENT)
             # ------------------------------------------------------------------------
             if multi_line:
                 s += indent
@@ -98,13 +98,13 @@ class Html(Tag):
         # ------------------------------------------------------------------------
 
     # ========================================================================
-    def to_str(self) -> str:
-        return self.preamble + super().to_str()
+    def html(self) -> str:
+        return self.preamble + super().html()
 
     # ========================================================================
     def save(self, filename):
         with open(filename, 'wt', encoding=self.charset, errors="surrogateescape") as f_out:
-            f_out.write(self.to_str())
+            f_out.write(self.html())
 
 
 # ============================================================================
