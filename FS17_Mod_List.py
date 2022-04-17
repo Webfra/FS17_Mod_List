@@ -21,7 +21,7 @@ MOD_VAULT = r'..\Mods'
 # Name of the HTML file to create.  A leading underscore ensures it is listed first in Explorer.
 OUTPUT_FILE = '_FS7_Mod_List.html'
 # Title of the HTML document.
-HTML_TITLE = 'Farming Simulator 17 - Mod List'
+HTML_TITLE = 'FS17 - Mod List'
 
 # ============================================================================
 # Constants for HTML generation.
@@ -107,13 +107,11 @@ def create_html_doc(mods: dict) -> Html:
     html = Html()
     # ------------------------------------------------------------------------
     # Create a <head> tag.
-    head = html.tag('head')
-    head.default_meta()
-    head.tag('title', text='FS17 Mod List')
-    head.tag('style', {'type': 'text/css'}, text=CSS)
+    html.head.tag('title', text=HTML_TITLE)
+    html.head.tag('style', {'type': 'text/css'}, text=CSS)
     # ------------------------------------------------------------------------
     # Create a <body> tag.
-    body = html.tag('body')
+    body = html.body
     body.tag('h1', {'class': 'fsgreen'}, text=HTML_TITLE)
     # ------------------------------------------------------------------------
     # Add all "other" mods.

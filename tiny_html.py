@@ -23,7 +23,7 @@ class Tag(object):
     # ========================================================================
     # Create a new sub-tag using the given parameters, add it to the
     # current tag and return it to the caller.
-    def tag(self, name: str, attributes: dict = {}, text: str = None) -> object:
+    def tag(self, name: str, attributes: dict = {}, text: str = None) -> Tag:
         tag = Tag(name, attributes, text)
         self.add(tag)
         return tag
@@ -87,15 +87,24 @@ class Tag(object):
 # HTML class to represent a full HTML document.
 class Html(Tag):
     # ========================================================================
-    def __init__(self) -> None:
+    def __init__(self, create_head_and_body=True) -> None:
+        # ------------------------------------------------------------------------
         super().__init__('html', {'xmlns': 'http://www.w3.org/1999/xhtml'})
+        # ------------------------------------------------------------------------
+        # Set preamble variable now. The user can overwrite it afterwards, if they want to.
+        s = '<?xml version="1.0" encoding="ISO-8859-1" ?>' + LINEBR
+        s += '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">' + LINEBR
+        self.preamble = s
+        # ------------------------------------------------------------------------
+        if create_head_and_body:
+            self.head = super().tag('head')
+            self.head.default_meta()
+            self.body = super().tag('body')
+        # ------------------------------------------------------------------------
 
     # ========================================================================
     def to_str(self) -> str:
-        s = '<?xml version="1.0" encoding="ISO-8859-1" ?>' + LINEBR
-        s += '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">' + LINEBR
-        s += super().to_str()
-        return s
+        return self.preamble + super().to_str()
 
     # ========================================================================
     def save(self, filename):
