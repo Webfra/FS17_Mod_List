@@ -25,7 +25,8 @@ Also, if the ModHub shuts down in the future, this should still allow to manage 
 # Configuration
 The script is configured via global variables at the beginning:
 <img src="images/Configuration.png">
-- ```INSTALL_DIR```: ist just for checking which mods are already installed (they will be shown with green background color.)
+- ```SAVE_DIR```: ist just for checking which mods are already installed (they will be shown with green background color.)
+- ```GAME_DIR```: is used to find Mod icons referencing the game store.
 - ```MOD_VAULT```: is relative to the "current directory", from which the script is started.
 - ```OUTPUT_FILE```: will be stored in the MOD_VAULT folder.
 
