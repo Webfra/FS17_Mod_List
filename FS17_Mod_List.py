@@ -50,7 +50,7 @@ def main() -> None:
         sys.exit(-1)
 
     # ------------------------------------------------------------------------
-    mods = {'maps': [], 'other': []}
+    mods = {}
 
     # ------------------------------------------------------------------------
     # Read MOD information and prepare HTML content.
@@ -68,7 +68,9 @@ def main() -> None:
         # Create a HTML representation for the mod.
         div, mod, icon, info, desc = create_mod_html(mod, installed_mods)
         # ------------------------------------------------------------------------
-        mods['maps' if mod.has_maps else 'other'].append( (div, mod, icon, info, desc) )
+        cat = 'Maps' if mod.has_maps else 'Other'
+        mod_list = mods.setdefault(cat, {}).setdefault(mod.title.upper(), [])
+        mod_list.append((div, mod, icon, info, desc))
 
     # ------------------------------------------------------------------------
     doc = create_html_doc(mods)
@@ -98,29 +100,27 @@ def create_html_doc(mods: dict) -> Html:
     body = html.body
     body.tag('h1', {'class': 'fsgreen'}, text=HTML_TITLE)
     table = body.tag('table')
+    # ------------------------------------------------------------------------
+    Categories = ['Other', 'Maps']
+    for cat in Categories:
+        # ------------------------------------------------------------------------
+        table.tag('tr', {'class': 'category'}).tag(
+            'td', {'colspan': '4'}).tag('h2', text=f'Category: {cat}')
+        # ------------------------------------------------------------------------
+        for name in sorted(mods[cat]):
+            mod_list = mods[cat][name]
+            for _, mod, icon, info, desc in mod_list:
+                mod_number += 1
+                create_mod_row(mod_number, mod, table, icon, info, desc)
 
-    # ------------------------------------------------------------------------
-    # Add all "other" mods.
-    table.tag('tr').tag('td', { 'colspan':'4'}).tag('h2', text='Category: Other Mods')
-    for _, mod, icon, info, desc in mods['other']:
-        mod_number += 1
-        create_mod_row(mod_number, mod, table, icon, info, desc)
-
-    # ------------------------------------------------------------------------
-    # Add all "map" mods.
-    # body.tag('hr')
-    table.tag('tr').tag('td', { 'colspan':'4'}).tag('h2', text='Category: Maps')
-    for _, mod, icon, info, desc in mods['maps']:
-        mod_number += 1
-        create_mod_row(mod_number, mod, table, icon, info, desc)
-    # ------------------------------------------------------------------------
     return html
 
 
 # ============================================================================
-def create_mod_row(mod_number:int, mod: Mod, table:Tag, icon:Tag, info:Tag, desc:Tag):
+def create_mod_row(mod_number: int, mod: Mod, table: Tag, icon: Tag, info: Tag, desc: Tag):
     tr = table.tag('tr')
-    tr.tag('td', {'class': 'instDiv'} if mod.is_installed else {}).tag('h1', {'class': 'none' if mod.is_installed else 'fsgreen', 'style':'text-align:right'}, text=str(mod_number))
+    tr.tag('td', {'class': 'instDiv'} if mod.is_installed else {}).tag('h1', {
+        'class': 'none' if mod.is_installed else 'fsgreen', 'style': 'text-align:right'}, text=str(mod_number))
     tr.tag('td', {'class': 'instDiv'} if mod.is_installed else {}).add(icon)
     tr.tag('td', {'class': 'instDiv'} if mod.is_installed else {}).add(info)
     tr.tag('td', {'class': 'desc'}).add(desc)
@@ -151,7 +151,7 @@ def create_mod_html(mod: Mod, installed_mods: list) -> Tag:
     # ------------------------------------------------------------------------
     # Column 1: The image/Icon
     icon = td1.tag('img', {'src': 'data:image/png;base64,' + mod.icon_b64,
-            'width': str(IMG_SIZE), 'height': str(IMG_SIZE)})
+                           'width': str(IMG_SIZE), 'height': str(IMG_SIZE)})
     # ------------------------------------------------------------------------
     # Column 2: Name and information.
     info = td2.tag('div')
@@ -165,7 +165,7 @@ def create_mod_html(mod: Mod, installed_mods: list) -> Tag:
     search_term = mod.title.replace(' ', '+')
     modhub = 'https://farming-simulator.com/mods.php?title=fs2017&lang=en&searchMod='
     info.tag('div').tag('small').tag('a', {"target": "_blank",
-                                          'href': modhub+search_term}, text='ModHub')
+                                           'href': modhub+search_term}, text='ModHub')
     # ------------------------------------------------------------------------
     # Column 3: Detailed Mod description
     desc = td3.tag('small', text=mod.description)

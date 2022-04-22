@@ -17,6 +17,12 @@ table td * {
     color: white;
 }
 
+/* div-style for category rows. */
+.category {
+    background: #32c07f;
+    color: white;
+}
+
 /* Highlighted text shall be shown as 'FS17 green' */
 .fsgreen {
     color: #7fc032;
