@@ -19,8 +19,12 @@ table td * {
 
 /* div-style for category rows. */
 .category {
-    background: #32c07f;
+    background: #10307f;
     color: white;
+}
+
+.category h1, h2, h3 {
+    margin: 0
 }
 
 /* Highlighted text shall be shown as 'FS17 green' */

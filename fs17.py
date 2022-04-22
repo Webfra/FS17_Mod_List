@@ -8,6 +8,7 @@ from zipfile import ZipFile
 from io import BytesIO
 import base64
 
+
 # Pillow Image library (pip install pillow)
 from PIL import Image
 
@@ -27,7 +28,8 @@ class Mod(object):
         self.IMG_SIZE: int = IMG_SIZE
         '''The size, to which all icons will be scaled to.'''
         # ------------------------------------------------------------------------
-        self.zipfile = zipfile
+        self.zipfile = os.path.basename(zipfile)
+        self.fullfile = zipfile
         '''The name of the ZIP file of the Mod.'''
         self.modDesc = ET.Element('')
         '''The modDesc.xml as xml.etree.ElementTree Element'''
@@ -51,7 +53,7 @@ class Mod(object):
     # ========================================================================
     def load(self) -> None:
         # ------------------------------------------------------------------------
-        with ZipFile(self.zipfile, 'r') as zip:
+        with ZipFile(self.fullfile, 'r') as zip:
             # ------------------------------------------------------------------------
             # Read the modDesc.xml file content.
             xml = zip.read('modDesc.xml').decode()

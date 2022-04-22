@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 
 from tiny_html import Tag, Html
@@ -39,6 +40,8 @@ def main() -> None:
     installed_mods = []
     if os.path.exists(save_dir):
         installed_mods = get_zipfiles(save_dir)
+        # Remove folders from filenames.
+        installed_mods = [os.path.basename(mod) for mod in installed_mods]
 
     # ------------------------------------------------------------------------
     # Get the list of Mods in the current folder.
@@ -60,15 +63,20 @@ def main() -> None:
         # ------------------------------------------------------------------------
         # Show progress.
         # print(idx+1, 'of', len(list_of_zipfiles), zipfile)
-        zipfile_vault = os.path.join(MOD_VAULT, zipfile)
         # ------------------------------------------------------------------------
         # Collect information about the mod.
-        mod = Mod(zipfile_vault, GAME_DIR, IMG_SIZE)
+        mod = Mod(zipfile, GAME_DIR, IMG_SIZE)
         # ------------------------------------------------------------------------
         # Create a HTML representation for the mod.
         div, mod, icon, info, desc = create_mod_html(mod, installed_mods)
         # ------------------------------------------------------------------------
-        cat = 'Maps' if mod.has_maps else 'Other'
+        # Determine Category from folder name.
+        cat = os.path.dirname(zipfile)
+        if cat != MOD_VAULT:
+            cat = os.path.basename(cat)
+        else:
+            cat = 'None'
+        # ------------------------------------------------------------------------
         mod_list = mods.setdefault(cat, {}).setdefault(mod.title.upper(), [])
         mod_list.append((div, mod, icon, info, desc))
 
@@ -101,17 +109,32 @@ def create_html_doc(mods: dict) -> Html:
     body.tag('h1', {'class': 'fsgreen'}, text=HTML_TITLE)
     table = body.tag('table')
     # ------------------------------------------------------------------------
-    Categories = ['Other', 'Maps']
-    for cat in Categories:
+    show_categories = not ( (len(mods)<=1) and ('None' in mods) )
+    # ------------------------------------------------------------------------
+    all_cats = sorted(mods)[:]
+    for cat in all_cats:
+        m = re.match('\d+_(.*)', cat)
+        vis_cat = m.group(1) if m else cat
         # ------------------------------------------------------------------------
-        table.tag('tr', {'class': 'category'}).tag(
-            'td', {'colspan': '4'}).tag('h2', text=f'Category: {cat}')
+        if show_categories:
+            td = table.tag('tr', {'class': 'category', 'id':f'Cat_{cat}'}).tag('td', {'colspan': '4'})
+            td.tag('i').tag('small', text='Mod-Category')
+            links = td.tag('small', text='&nbsp;&nbsp;&nbsp;&nbsp;')
+            for other_cat in all_cats:
+                m = re.match('\d+_(.*)', other_cat)
+                vis_other_cat = m.group(1) if m else other_cat
+                links.tag('a', {'href':f'#Cat_{other_cat}', 'class': 'fsgreen'}, text=vis_other_cat)
+                links.tag('span', text='&nbsp;&nbsp;')
+            td.tag('h1', text=f'{vis_cat}')
         # ------------------------------------------------------------------------
         for name in sorted(mods[cat]):
             mod_list = mods[cat][name]
             for _, mod, icon, info, desc in mod_list:
                 mod_number += 1
                 create_mod_row(mod_number, mod, table, icon, info, desc)
+        # ------------------------------------------------------------------------
+        last_cat = cat
+        # ------------------------------------------------------------------------
 
     return html
 
@@ -130,8 +153,9 @@ def create_mod_row(mod_number: int, mod: Mod, table: Tag, icon: Tag, info: Tag, 
 # Create a HTML representation for the mod.
 def create_mod_html(mod: Mod, installed_mods: list) -> Tag:
     # ------------------------------------------------------------------------
-    zipfile = os.path.basename(mod.zipfile)
+    zipfile = mod.zipfile
     is_installed = zipfile in installed_mods
+    zipfile_rel = os.path.relpath(mod.fullfile, MOD_VAULT)
     mod.is_installed = is_installed
     # ------------------------------------------------------------------------
     # A new DIV, to contain the Mod description.
@@ -157,7 +181,7 @@ def create_mod_html(mod: Mod, installed_mods: list) -> Tag:
     info = td2.tag('div')
     info.tag('div', {'class': 'fsgreen'} if not is_installed else {}).tag(
         'b', text=f'{mod.title}')
-    info.tag('i').tag('small').tag('a', {'href': zipfile}, text=zipfile)
+    info.tag('i').tag('small').tag('a', {'href': zipfile_rel}, text=zipfile)
     info.tag('div', text='Version: ' + mod.version)
     info.tag('div').tag('small', text='Author: ' + mod.author)
     info.tag('div').tag('small', text='Installed:' + str(is_installed))
@@ -179,10 +203,13 @@ def get_zipfiles(folder: str) -> list:
     # ------------------------------------------------------------------------
     # Convert "~" into the users home folder.
     folder = os.path.expanduser(folder)
+    zipfiles = []
     # ------------------------------------------------------------------------
     # Get all zip files in folder.
-    for _, _, files in os.walk(folder):
-        return [filename for filename in files if filename.endswith('.zip')]
+    for root, _, files in os.walk(folder):
+        zipfiles += [os.path.join(root, filename) for filename in files if filename.endswith('.zip')]
+    # ------------------------------------------------------------------------
+    return zipfiles
 
 
 # ============================================================================
