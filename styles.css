@@ -27,3 +27,10 @@ table td * {
     background: #3f3f3f;
     color: white;
 }
+
+/* Table borders and padding. */
+table, th, td {
+    border: 1px solid grey;
+    border-collapse: collapse;
+    padding: 15px;
+}

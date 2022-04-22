@@ -1,3 +1,5 @@
+"""Very simple helper classes for creation of HTML documents."""
+
 from __future__ import annotations
 
 # ============================================================================
@@ -6,8 +8,9 @@ LINEBR = '\n'   # Linebreak character
 
 
 # ============================================================================
-# Tag class to facilitate creating HTML documents.
 class Tag(object):
+    """Class to facilitate creating tags for HTML documents."""
+
     # ========================================================================
     def __init__(self, name: str, attributes: dict = {}, text: str = None) -> None:
         self.name = name
@@ -78,8 +81,9 @@ class Tag(object):
 
 
 # ============================================================================
-# HTML class to represent a full HTML document.
 class Html(Tag):
+    """Class representing a HTML document."""
+
     # ========================================================================
     def __init__(self, create_head_and_body=True, charset='utf-8') -> None:
         # ------------------------------------------------------------------------

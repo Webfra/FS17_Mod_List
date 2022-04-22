@@ -1,3 +1,6 @@
+""" Module to provide Farming Simulator 17 related functions and classes.
+"""
+
 import xml.etree.ElementTree as ET
 
 import os
@@ -11,6 +14,11 @@ from PIL import Image
 
 # ============================================================================
 class Mod(object):
+    """ Represents a FS17 Mod.
+
+    Mods (in Zip files) can be read and some information will be available
+    via its member variables.
+    """
     # ========================================================================
     def __init__(self, zipfile: str, GAME_DIR: str, IMG_SIZE: int) -> None:
         # ------------------------------------------------------------------------
@@ -50,7 +58,7 @@ class Mod(object):
             # ------------------------------------------------------------------------
             # Fix a few issues with the modDesc.xml of some mods.
             # Otherwise, ET.fromstring() will fail!
-            xml = Mod.fix_xml(xml)
+            xml = Mod._fix_xml(xml)
             # ------------------------------------------------------------------------
             # Create an ET Element from the XML.
             self.modDesc = ET.fromstring(
@@ -87,7 +95,7 @@ class Mod(object):
     # Fix a few issues with the modDesc.xml of some mods.
     # Otherwise, ET.fromstring() will fail!
     @staticmethod
-    def fix_xml(xml: str) -> str:
+    def _fix_xml(xml: str) -> str:
         # ------------------------------------------------------------------------
         # Ampersand is not allowed raw!
         xml = xml.replace(' & ', ' and ')

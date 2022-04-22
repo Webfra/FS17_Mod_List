@@ -66,9 +66,9 @@ def main() -> None:
         mod = Mod(zipfile_vault, GAME_DIR, IMG_SIZE)
         # ------------------------------------------------------------------------
         # Create a HTML representation for the mod.
-        div = create_mod_html(mod, installed_mods)
+        div, mod, icon, info, desc = create_mod_html(mod, installed_mods)
         # ------------------------------------------------------------------------
-        mods['maps' if mod.has_maps else 'other'].append(div)
+        mods['maps' if mod.has_maps else 'other'].append( (div, mod, icon, info, desc) )
 
     # ------------------------------------------------------------------------
     doc = create_html_doc(mods)
@@ -81,8 +81,9 @@ def main() -> None:
 
 
 # ============================================================================
-# Create a HTML document from the mods dictionary.
 def create_html_doc(mods: dict) -> Html:
+    """Create a HTML document from the mods dictionary."""
+
     # ------------------------------------------------------------------------
     # Start a new HTML file.
     html = Html()
@@ -92,24 +93,37 @@ def create_html_doc(mods: dict) -> Html:
     with open('styles.css', 'rt') as css:
         html.head.tag('style', {'type': 'text/css'}, text=css.read())
     # ------------------------------------------------------------------------
+    mod_number = 0
     # Create a <body> tag.
     body = html.body
     body.tag('h1', {'class': 'fsgreen'}, text=HTML_TITLE)
+    table = body.tag('table')
+
     # ------------------------------------------------------------------------
     # Add all "other" mods.
-    body.tag('h1', text='Category: Other Mods')
-    for div in mods['other']:
-        body.tag('hr')
-        body.add(div)
+    table.tag('tr').tag('td', { 'colspan':'4'}).tag('h2', text='Category: Other Mods')
+    for _, mod, icon, info, desc in mods['other']:
+        mod_number += 1
+        create_mod_row(mod_number, mod, table, icon, info, desc)
+
     # ------------------------------------------------------------------------
     # Add all "map" mods.
-    body.tag('hr')
-    body.tag('h1', text='Category: Maps')
-    for div in mods['maps']:
-        body.tag('hr')
-        body.add(div)
+    # body.tag('hr')
+    table.tag('tr').tag('td', { 'colspan':'4'}).tag('h2', text='Category: Maps')
+    for _, mod, icon, info, desc in mods['maps']:
+        mod_number += 1
+        create_mod_row(mod_number, mod, table, icon, info, desc)
     # ------------------------------------------------------------------------
     return html
+
+
+# ============================================================================
+def create_mod_row(mod_number:int, mod: Mod, table:Tag, icon:Tag, info:Tag, desc:Tag):
+    tr = table.tag('tr')
+    tr.tag('td', {'class': 'instDiv'} if mod.is_installed else {}).tag('h1', {'class': 'none' if mod.is_installed else 'fsgreen', 'style':'text-align:right'}, text=str(mod_number))
+    tr.tag('td', {'class': 'instDiv'} if mod.is_installed else {}).add(icon)
+    tr.tag('td', {'class': 'instDiv'} if mod.is_installed else {}).add(info)
+    tr.tag('td', {'class': 'desc'}).add(desc)
 
 
 # ============================================================================
@@ -118,6 +132,7 @@ def create_mod_html(mod: Mod, installed_mods: list) -> Tag:
     # ------------------------------------------------------------------------
     zipfile = os.path.basename(mod.zipfile)
     is_installed = zipfile in installed_mods
+    mod.is_installed = is_installed
     # ------------------------------------------------------------------------
     # A new DIV, to contain the Mod description.
     div = Tag('div', {'class': 'instDiv'} if is_installed else {})
@@ -135,22 +150,27 @@ def create_mod_html(mod: Mod, installed_mods: list) -> Tag:
     td3 = tr.tag('td', {'class': 'desc'})
     # ------------------------------------------------------------------------
     # Column 1: The image/Icon
-    td1.tag('img', {'src': 'data:image/png;base64,' + mod.icon_b64,
+    icon = td1.tag('img', {'src': 'data:image/png;base64,' + mod.icon_b64,
             'width': str(IMG_SIZE), 'height': str(IMG_SIZE)})
     # ------------------------------------------------------------------------
     # Column 2: Name and information.
-    td2.tag('div', {'class': 'fsgreen'} if not is_installed else {}).tag(
+    info = td2.tag('div')
+    info.tag('div', {'class': 'fsgreen'} if not is_installed else {}).tag(
         'b', text=f'{mod.title}')
-    td2.tag('i').tag('small').tag('a', {'href': zipfile}, text=zipfile)
-    td2.tag('div', text='Version: ' + mod.version)
-    td2.tag('div').tag('small', text='Author: ' + mod.author)
-    td2.tag('div').tag('small', text='Installed:' + str(is_installed))
-    td2.tag('div').tag('small', text='Multiplayer:' + str(mod.multiplayer))
+    info.tag('i').tag('small').tag('a', {'href': zipfile}, text=zipfile)
+    info.tag('div', text='Version: ' + mod.version)
+    info.tag('div').tag('small', text='Author: ' + mod.author)
+    info.tag('div').tag('small', text='Installed:' + str(is_installed))
+    info.tag('div').tag('small', text='Multiplayer:' + str(mod.multiplayer))
+    search_term = mod.title.replace(' ', '+')
+    modhub = 'https://farming-simulator.com/mods.php?title=fs2017&lang=en&searchMod='
+    info.tag('div').tag('small').tag('a', {"target": "_blank",
+                                          'href': modhub+search_term}, text='ModHub')
     # ------------------------------------------------------------------------
     # Column 3: Detailed Mod description
-    td3.tag('small', text=mod.description)
+    desc = td3.tag('small', text=mod.description)
     # ------------------------------------------------------------------------
-    return div
+    return div, mod, icon, info, desc
 
 
 # ============================================================================
