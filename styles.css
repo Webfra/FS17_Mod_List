@@ -13,7 +13,8 @@ table td * {
 
 /* div-style for installed mods. */
 .instDiv {
-    background: #7fc032;
+    /*    background: #7fc032; */
+    background: #203020;
     color: white;
 }
 
@@ -43,4 +44,30 @@ table, th, td {
     border: 1px solid grey;
     border-collapse: collapse;
     padding: 15px;
+}
+
+.brand {
+    color: #3fc0FF;
+}
+
+.item_name {
+    color: #3070Ff;
+}
+
+.item_cat {
+    color: yellow;
+}
+
+.item_price {
+    color: yellow;
+}
+
+.item_upkeep {
+    color: #AFAF00;
+}
+
+table.item_list, td.item_list {
+    border: 0px solid darkgrey;
+    border-collapse: collapse;
+    padding: 0px;
 }

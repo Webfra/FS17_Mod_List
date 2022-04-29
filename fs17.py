@@ -4,6 +4,7 @@
 import xml.etree.ElementTree as ET
 
 import os
+import re
 from zipfile import ZipFile
 from io import BytesIO
 import base64
@@ -55,6 +56,8 @@ class Mod(object):
         # ------------------------------------------------------------------------
         with ZipFile(self.fullfile, 'r') as zip:
             # ------------------------------------------------------------------------
+            self.ZipFile = zip
+            # ------------------------------------------------------------------------
             # Read the modDesc.xml file content.
             xml = zip.read('modDesc.xml').decode()
             # ------------------------------------------------------------------------
@@ -63,8 +66,7 @@ class Mod(object):
             xml = Mod._fix_xml(xml)
             # ------------------------------------------------------------------------
             # Create an ET Element from the XML.
-            self.modDesc = ET.fromstring(
-                xml, parser=ET.XMLParser(encoding="utf-8"))
+            self.modDesc = ET.fromstring(xml)
             # ------------------------------------------------------------------------
             # Is the mod a Map?
             self.has_maps = self.modDesc.find('./maps') is not None
@@ -92,6 +94,33 @@ class Mod(object):
             if MP is not None:
                 if 'supported' in MP.attrib:
                     self.multiplayer = MP.attrib['supported'] == 'true'
+            # ------------------------------------------------------------------------
+            # Get the listed store items.
+            self.store_item_xmls = [item.attrib['xmlFilename'] for item in self.modDesc.findall('./storeItems/storeItem')]
+            # self.store_items = [ Item(ET.fromstring(zip.read(item_xml).decode())) for item_xml in self.store_item_xmls ]
+            self.store_items = []
+            for item_xml in self.store_item_xmls:
+                print(' -- ', item_xml)
+                try:
+                    xml = zip.read(item_xml)
+                except:
+                    print(f'***WARNING: Error reading store item file: {item_xml} from zip file: {self.fullfile}' )
+                    continue
+                try:
+                    xml = xml.decode() 
+                except:
+                    print(f'***WARNING: Invalid store item file: {item_xml} from zip file: {self.fullfile}' )
+                    continue
+                try:
+                    xml = Mod._fix_xml(xml)
+                    xml = ET.fromstring(xml)
+                except Exception as e:
+                    print(f'***WARNING: Invalid XML file: {item_xml} from zip file: {self.fullfile}' )
+                    print(e)
+                    continue
+                self.store_items.append(Item(self, xml))
+            # ------------------------------------------------------------------------
+            del self.ZipFile
 
     # ============================================================================
     # Fix a few issues with the modDesc.xml of some mods.
@@ -110,6 +139,27 @@ class Mod(object):
         # Some more invalid tokens in Beta mods.
         xml = xml.replace('Bressel&Lade', 'Bressel+Lade')
         xml = xml.replace('and enjoy.]]></de>', 'and enjoy.</de>')
+
+        xml = xml.replace('"endTransLimit="', '" endTransLimit="')
+        xml = xml.replace('"translationActive="', '" translationActive="')
+        xml = xml.replace('"scaleActive="', '" scaleActive="')
+        xml = xml.replace('"playSound="', '" playSound="')
+        xml = xml.replace('"rotationActive="', '" rotationActive="')
+        xml = xml.replace('"visibilityActive="', '" visibilityActive="')
+        xml = xml.replace('"index="', '" index="')
+
+
+        xml = xml.replace('<function>https://www.facebook.com/ETA-La-Marchoise-318371215013344/?ref=ts&fref=ts</function>', '')
+
+        xml = xml.replace('-- aanimazioni tubi --', ' aanimazioni tubi ')
+
+        # Remove comments
+
+        # Comment-shenanigans in FS17_Guellepack.zip
+        xml = re.sub(r'^<!--<vehicleTypeConfigurations>(.*?)^-->\s*$', '\n\n\n\n\n\n\n\n\n', xml, flags=re.MULTILINE | re.DOTALL)
+
+        xml = re.sub(r'<!--(.*?)-->', '<!-- -->', xml )
+        
         # ------------------------------------------------------------------------
         return xml
 
@@ -186,19 +236,80 @@ class Mod(object):
     # ============================================================================
     # Get the title of the mod from the mod description XML.
     def _get_mod_title(self) -> str:
-        desc = 'NONE'
-        title = self.modDesc.find('./title')
-        if title is not None:
-            desc = title.find('./en')
-            if desc is None:
-                desc = title.find('./de')
-                if desc is None:
-                    desc = title.find('./fr')
-                    if desc is None:
-                        desc = 'UNKNOWN'
-        if type(desc) is not str:
-            desc = desc.text
-        return desc
+        title = self.l10n(self.modDesc.find('./title'))
+        if title == '':
+            return 'UNKNOWN'
+        return title
+
+    # ============================================================================
+    def l10n(self, node) -> str:
+        sub = None
+        if node is not None:
+            sub = node.find('./en')
+            if sub is None:
+                sub = node.find('./de')
+                if sub is None:
+                    sub = node.find('./fr')
+        result = ''
+        if node is not None:
+            result = node.text
+        if sub is not None:
+            result = sub.text
+        if result.startswith('$l10n_'):
+            result = self._l10n(result)
+        return result
+
+    # ============================================================================
+    def _l10n(self, text:str) -> str:
+        to_find = text.replace('$l10n_','')
+        l10ns = self.modDesc.findall('./l10n/text')
+        for l10n in l10ns:
+            if l10n.attrib['name'] == to_find:
+                return self.l10n(l10n)
+        l10n = self.modDesc.find('./l10n')
+        if l10n is not None:
+            if 'filenamePrefix' in l10n.attrib:
+                prefix = l10n.attrib['filenamePrefix']
+                # ------------------------------------------------------------------------
+                # Read the modDesc.xml file content.
+                xml = self.ZipFile.read(prefix+'_en.xml').decode()
+                xml = ET.fromstring(xml)
+                l10n_texts = xml.findall('./texts/text')
+                for l10n_text in l10n_texts:
+                    if l10n_text.attrib['name'] == to_find:
+                        return l10n_text.attrib['text']
+                # ------------------------------------------------------------------------
+        return text
+
+
+# ============================================================================
+class Item(object):
+    # ============================================================================
+    def __init__(self, mod:Mod, xml:ET.Element) -> None:
+        self.xml = xml
+        self.category = mod.l10n(xml.find('./storeData/category'))
+        try:
+            self.brand = mod.l10n(xml.find('./storeData/brand'))
+        except AttributeError as e:
+            self.brand = ''  # '(no brand)'
+
+        self.name = mod.l10n(xml.find('./storeData/name'))
+
+        self.price = '0'
+        self.dailyUpkeep = '0'
+        
+        try:
+            self.price = xml.find('./storeData/price').text
+        except AttributeError as e:
+            self.price = '0'
+
+        try:
+            self.dailyUpkeep = xml.find('./storeData/dailyUpkeep').text
+        except AttributeError as e:
+            self.dailyUpkeep = '0'
+
+    # ============================================================================
+    
 
 
 # ============================================================================
